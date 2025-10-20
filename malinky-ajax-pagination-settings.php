@@ -29,8 +29,14 @@ class Malinky_Ajax_Pagination_Settings
      */
     public function malinky_ajax_pagination_settings_current_page_number()
     {
-        return substr( strrchr( $_GET['page'], '-' ), 1 );
-    }  
+        $page = isset($_GET['page']) ? (string) $_GET['page'] : '';
+
+        if (strpos($page, '-') !== false) {
+            return substr(strrchr($page, '-'), 1);
+        }
+
+        return 1;
+    }
 
     /**
      * Get the next settings page number.
@@ -80,6 +86,12 @@ class Malinky_Ajax_Pagination_Settings
      */
     public function malinky_ajax_pagination_settings_add_page()
     {
+        // Sicherstellen, dass $_GET['page'] immer ein String ist und Schutz für leere/nicht-String Werte
+        $page = isset($_GET['page']) && is_string($_GET['page']) ? $_GET['page'] : '';
+        if (!is_string($page) || $page === null) {
+            $page = '';
+        }
+
         for ( $x = 1; $x <= $this->malinky_ajax_pagination_settings_new_page_number(); $x++ ) {
 
             /**
@@ -89,7 +101,7 @@ class Malinky_Ajax_Pagination_Settings
              */
             
             // Only show first page in menu.
-            $show_in_menu = $x == 1 ? 'options-general.php' : null;
+            $show_in_menu = $x == 1 ? 'options-general.php' : '';
 
             add_submenu_page(
                 $show_in_menu,
@@ -108,7 +120,7 @@ class Malinky_Ajax_Pagination_Settings
      * @return void   
      */
     public function malinky_ajax_pagination_settings_add_page_output_callback()
-    {   
+    {
         // Check if deleting.
         if ( isset( $_GET['delete'] ) ) {
             if ( is_numeric( $_GET['delete'] ) ) {
@@ -118,6 +130,10 @@ class Malinky_Ajax_Pagination_Settings
             }
         }
 
+        $page = isset($_GET['page']) && is_string($_GET['page']) ? $_GET['page'] : '';
+        if (!is_string($page) || $page === null) {
+            $page = '';
+        }
         $total_settings = $this->malinky_ajax_pagination_settings_count_settings(); ?>
 
         <div class="wrap">
@@ -130,8 +146,17 @@ class Malinky_Ajax_Pagination_Settings
                     if ( $x == 1 ) { ?>
                         <div class="form-table">
                             <h3><?php _e( 'Saved Settings', 'malinky-ajax-pagination' ); ?></h3>
-                    <?php } ?>
-                            <a href="options-general.php?page=malinky-ajax-pagination-settings-<?php echo $x ?>" class="<?php echo $_GET['page'] == 'malinky-ajax-pagination-settings-' . $x ? ' active' : '';?>">Paging Settings <?php echo $x; ?></a>
+                    <?php }
+                    // PATCH: Sicherstellen, dass $page nicht leer ist, bevor strpos verwendet wird
+                    ?>
+                            <?php
+                              if ($page !== '' && strpos($page, 'malinky-ajax-pagination-settings-' . $x) !== false) {
+                                  $active = 'active';
+                              } else {
+                                  $active = '';
+                              }
+                            ?>
+                            <a href="options-general.php?page=malinky-ajax-pagination-settings-<?php echo $x; ?>" class="<?php echo $active; ?>">Paging Settings <?php echo $x; ?></a>
                     <?php if ( $x < $total_settings ) { ?> | <?php }
                     if ( $x == $total_settings ) { ?>
                         </div>
